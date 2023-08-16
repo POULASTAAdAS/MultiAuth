@@ -5,6 +5,7 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,15 +14,15 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.Person
 import androidx.compose.material.icons.rounded.Visibility
 import androidx.compose.material.icons.rounded.VisibilityOff
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -35,19 +36,25 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusDirection
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.authapp.R
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun Content(
-    handleBasicLogin: (String , String) -> Unit,
-    handleGoogleLogin: (String) -> Unit
+    googleButtonClicked: Boolean,
+    handleBasicLogin: (String, String) -> Unit,
+    handleGoogleLogin: () -> Unit
 ) {
     Column(
         Modifier
@@ -55,27 +62,29 @@ fun Content(
             .padding(all = 20.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-
-        Spacer(
-            modifier = Modifier
-                .aspectRatio(2f)
-        )
+        Spacer(modifier = Modifier.aspectRatio(2f))
 
         Column(
             Modifier
                 .fillMaxSize()
         ) {
-
-            Spacer(modifier = Modifier.aspectRatio(3f))
-
+            val haptic = LocalHapticFeedback.current
             val focusManager = LocalFocusManager.current
 
             val userName = remember { mutableStateOf("") }
+            val password = remember { mutableStateOf("") }
+
+            val showPassword = remember { mutableStateOf(true) }
+            val userNameIsError = remember { mutableStateOf(false) }
+            val passwordIsError = remember { mutableStateOf(false) }
+
+            Spacer(modifier = Modifier.aspectRatio(3f))
 
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = userName.value,
                 onValueChange = {
+                    userNameIsError.value = false
                     userName.value = it
                 },
                 placeholder = {
@@ -94,21 +103,38 @@ fun Content(
                     }
                 ),
                 singleLine = true,
-                shape = Shapes().large
+                shape = Shapes().large,
+                isError = userNameIsError.value,
+                supportingText = {
+                    if (userNameIsError.value) {
+                        Text(
+                            text = "username to short",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
             )
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            val password = remember { mutableStateOf("") }
-
-            val showPassword = remember {
-                mutableStateOf(true)
+            fun handleBasicLogin() {
+                if (userName.value.trim().length >= 3 && password.value.trim().length >= 4) {
+                    focusManager.clearFocus()
+                    focusManager.clearFocus()
+                    handleBasicLogin(userName.value, password.value)
+                    userName.value = ""
+                    password.value = ""
+                } else {
+                    if (userName.value.trim().length < 3) userNameIsError.value = true
+                    if (password.value.trim().length < 4) passwordIsError.value = true
+                }
             }
 
             OutlinedTextField(
                 modifier = Modifier.fillMaxWidth(),
                 value = password.value,
                 onValueChange = {
+                    passwordIsError.value = false
                     password.value = it
                 },
                 placeholder = {
@@ -123,10 +149,11 @@ fun Content(
                     Icon(
                         modifier = Modifier.clickable(
                             indication = null,
-                            interactionSource = MutableInteractionSource()
+                            interactionSource = MutableInteractionSource(),
                         ) {
                             showPassword.value = !showPassword.value
                             Log.d("showPassword", showPassword.value.toString())
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                         },
                         imageVector = if (showPassword.value) Icons.Rounded.Visibility
                         else Icons.Rounded.VisibilityOff,
@@ -139,23 +166,29 @@ fun Content(
                 ),
                 keyboardActions = KeyboardActions(
                     onDone = {
-                        focusManager.clearFocus()
+                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                        handleBasicLogin()
                     }
                 ),
                 singleLine = true,
-                shape = Shapes().large
+                shape = Shapes().large,
+                isError = passwordIsError.value,
+                supportingText = {
+                    if (passwordIsError.value) {
+                        Text(
+                            text = "password to short",
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
             )
-
 
             Spacer(modifier = Modifier.height(30.dp))
 
-
             Button(
                 onClick = {
-                    focusManager.clearFocus()
-                    userName.value = ""
-                    password.value = ""
-                    handleBasicLogin(userName.value , password.value)
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    handleBasicLogin()
                 },
                 modifier = Modifier
                     .fillMaxWidth()
@@ -172,7 +205,6 @@ fun Content(
                 )
             }
 
-
             Row(
                 Modifier
                     .fillMaxSize()
@@ -180,7 +212,7 @@ fun Content(
             ) {
                 Button(
                     onClick = {
-
+                        handleGoogleLogin()
                     },
                     Modifier
                         .fillMaxWidth()
@@ -191,16 +223,45 @@ fun Content(
                     ),
                     border = BorderStroke(2.dp, Color.DarkGray)
                 ) {
-                    Text(
-                        text = "Continue with Google",
-                        fontSize = MaterialTheme.typography.titleLarge.fontSize,
-                        color = Color.Black
-                    )
-                    Spacer(modifier = Modifier.width(20.dp))
-                    Image(
-                        imageVector = Icons.Rounded.Person,
-                        contentDescription = "google button"
-                    )
+                    haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                    if (!googleButtonClicked) {
+                        Row(
+                            modifier = Modifier.fillMaxSize(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Image(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .weight(1f),
+                                painter = painterResource(id = R.drawable.ic_google_logo),
+                                contentDescription = "google logo"
+                            )
+
+                            Text(
+                                modifier = Modifier.weight(7f),
+                                text = "Continue with Google",
+                                fontSize = MaterialTheme.typography.titleLarge.fontSize,
+                                color = Color.Black,
+                                textAlign = TextAlign.Center
+                            )
+
+                            Spacer(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .weight(1f)
+                            )
+                        }
+                    } else {
+                        Column(
+                            modifier = Modifier.size(30.dp),
+                            verticalArrangement = Arrangement.Center,
+                            horizontalAlignment = Alignment.CenterHorizontally
+                        ) {
+                            CircularProgressIndicator(
+                                strokeWidth = 3.dp
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -211,9 +272,10 @@ fun Content(
 @Composable
 private fun Preview() {
     Content(
-        handleBasicLogin = { _ ,_ ->
+        handleBasicLogin = { _, _ ->
 
         },
+        googleButtonClicked = false,
         handleGoogleLogin = {}
     )
 }
