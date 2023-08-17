@@ -54,7 +54,8 @@ import com.example.authapp.R
 fun Content(
     googleButtonClicked: Boolean,
     handleBasicLogin: (String, String) -> Unit,
-    handleGoogleLogin: () -> Unit
+    handleGoogleLogin: () -> Unit,
+    showResult: () -> Unit
 ) {
     Column(
         Modifier
@@ -205,11 +206,20 @@ fun Content(
                 )
             }
 
+            Button(
+                onClick = showResult,
+                Modifier.align(Alignment.CenterHorizontally)
+                    .padding(top = 20.dp)
+            ) {
+                Text(text = "Result")
+            }
+
             Row(
                 Modifier
                     .fillMaxSize()
                     .padding(bottom = 10.dp)
             ) {
+
                 Button(
                     onClick = {
                         handleGoogleLogin()
@@ -277,5 +287,7 @@ private fun Preview() {
         },
         googleButtonClicked = false,
         handleGoogleLogin = {}
-    )
+    ) {
+
+    }
 }

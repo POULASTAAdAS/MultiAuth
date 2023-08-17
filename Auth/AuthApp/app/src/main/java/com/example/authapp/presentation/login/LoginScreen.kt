@@ -33,7 +33,9 @@ fun LoginScreen(
         handleGoogleLogin = {
             googleButtonClicked.value = true
         }
-    )
+    ){
+        mainViewModel.show()
+    }
 
     val activity = LocalContext.current as Activity
 
